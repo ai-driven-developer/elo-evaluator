@@ -258,21 +258,21 @@ class TestCastling(unittest.TestCase):
         self.assertFalse(s.castling[2])  # k
         self.assertFalse(s.castling[3])  # q
 
-    def test_h1_rook_move_removes_K_right(self):
+    def test_h1_rook_move_removes_kingside_right(self):
         s = ChessState()
         s.board[6] = "."  # clear g1
         s.push_uci("h1g1")
         self.assertFalse(s.castling[0])  # K gone
         self.assertTrue(s.castling[1])   # Q still there
 
-    def test_a1_rook_move_removes_Q_right(self):
+    def test_a1_rook_move_removes_queenside_right(self):
         s = ChessState()
         s.board[1] = "."  # clear b1
         s.push_uci("a1b1")
         self.assertTrue(s.castling[0])   # K still there
         self.assertFalse(s.castling[1])  # Q gone
 
-    def test_capture_on_h1_removes_K_right(self):
+    def test_capture_on_h1_removes_kingside_right(self):
         """Opponent captures rook on h1 → white loses kingside castling."""
         s = ChessState()
         # Put a black rook on g2 and let it capture h1

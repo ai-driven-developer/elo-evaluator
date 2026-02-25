@@ -92,7 +92,7 @@ class TestEvaluateEngineDispatcher(unittest.TestCase):
         """Default strategy is adaptive — starts at midpoint."""
         mock_run.return_value = make_match_result(2, 1.0)
 
-        result = evaluate_engine(
+        evaluate_engine(
             engine_path="/test/engine",
             num_matches=1,
             games_per_match=2,
@@ -630,7 +630,7 @@ class TestEvaluateEngineBsearch(unittest.TestCase):
     def test_via_dispatcher(self, mock_run):
         mock_run.return_value = make_match_result(4, 2.0)
 
-        result = evaluate_engine(
+        evaluate_engine(
             strategy="bsearch",
             engine_path="/test/engine",
             num_matches=2,
@@ -1210,7 +1210,7 @@ class TestAutoDetectViaDispatcher(unittest.TestCase):
         """evaluate_engine() detects ELO range when min/max not provided."""
         mock_run.return_value = make_match_result(4, 2.0)
 
-        result = evaluate_engine(
+        evaluate_engine(
             strategy="adaptive",
             engine_path="/test/engine",
             num_matches=1,

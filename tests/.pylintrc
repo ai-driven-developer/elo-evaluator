@@ -1,0 +1,21 @@
+[MESSAGES CONTROL]
+# Standard suppressions for test code:
+# - C0114/C0115/C0116: test names are self-documenting
+# - W0212: tests need to access private members
+# - W0613: mock decorators inject arguments
+# - R0904: test classes naturally have many test methods
+# - R0913/R0914/R0917: test setup often needs many variables/arguments
+# - R0801: test setup code is often similar across files
+# - C0302: large test modules are normal
+disable=
+    missing-module-docstring,
+    missing-class-docstring,
+    missing-function-docstring,
+    protected-access,
+    unused-argument,
+    too-many-public-methods,
+    too-many-arguments,
+    too-many-positional-arguments,
+    R0914,
+    duplicate-code,
+    too-many-lines

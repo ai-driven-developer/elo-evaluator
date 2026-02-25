@@ -113,7 +113,7 @@ class TestUCIEngineGo(unittest.TestCase):
         engine.start()
         engine.new_game()
 
-        bestmove, score = engine.go([], 100)
+        bestmove, _score = engine.go([], 100)
         self.assertEqual(bestmove, "e2e4")
 
     @patch("uci_engine.subprocess.Popen")
@@ -291,10 +291,6 @@ class TestUCIEngineQuit(unittest.TestCase):
         proc = make_fake_process(["uciok"])
         proc.wait.side_effect = subprocess.TimeoutExpired("engine", 5)
         proc.kill = MagicMock()
-        # After kill, wait should succeed
-        def wait_after_kill(timeout=None):
-            if timeout:
-                raise subprocess.TimeoutExpired("engine", timeout)
         proc.wait = MagicMock(side_effect=[subprocess.TimeoutExpired("engine", 5), None])
         mock_popen.return_value = proc
 

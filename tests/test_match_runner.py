@@ -1,9 +1,8 @@
-import logging
 import unittest
-from unittest.mock import patch, MagicMock, call
+from unittest.mock import patch, MagicMock
 
 from uci_engine import MATE_SCORE
-from match_runner import play_game, run_match, _compute_engine_score, GameResult
+from match_runner import play_game, run_match, _compute_engine_score
 
 
 def make_mock_engine(go_responses: list[tuple[str, int | None]]):
@@ -81,7 +80,7 @@ class TestPlayGame(unittest.TestCase):
         black = make_mock_engine([
             ("(none)", 0),  # no legal moves, score=0 → stalemate
         ])
-        result, moves, term = play_game(white, black, movetime_ms=100)
+        result, _moves, term = play_game(white, black, movetime_ms=100)
         self.assertEqual(result, "1/2-1/2")
         self.assertEqual(term, "stalemate")
 
@@ -139,7 +138,7 @@ class TestPlayGame(unittest.TestCase):
             ("g8f6", -200),
             ("0000", -MATE_SCORE),
         ])
-        result, moves, term = play_game(white, black, movetime_ms=100)
+        result, _moves, term = play_game(white, black, movetime_ms=100)
         self.assertEqual(result, "1-0")
         self.assertEqual(term, "checkmate")
 
@@ -320,26 +319,6 @@ class TestRunMatch(unittest.TestCase):
 
         self.assertEqual(result.total_score, 0.5)
         self.assertEqual(result.games[0].termination, "threefold_repetition")
-
-    @patch("match_runner.UCIEngine")
-    def test_total_score_multiple_games(self, mock_cls):
-        """2 wins + 1 draw = 2.5 total."""
-        engine_inst = make_mock_engine([
-            # Game 0 (engine white): engine moves, SF mated
-            ("e2e4", 30),
-            # Game 1 (engine black): SF moves, engine mated... no.
-            # Let's simplify: all games end on first ply
-
-            # Game 1 (engine black): SF moves first, then engine gets called
-            ("(none)", -MATE_SCORE),  # engine (black) mated → engine loses...
-            # Wait, I need to rethink this.
-        ])
-        # This is getting complex with side_effect. Let me use a different approach.
-        sf_inst = make_mock_engine([])
-        mock_cls.side_effect = [engine_inst, sf_inst]
-
-        # Actually let me just use play_game mock instead
-        pass
 
     @patch("match_runner.play_game")
     @patch("match_runner.UCIEngine")
