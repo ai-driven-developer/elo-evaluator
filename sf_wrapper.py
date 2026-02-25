@@ -16,6 +16,7 @@ import threading
 
 
 def main():
+    """Run Stockfish as a fixed-ELO UCI engine proxy."""
     elo = int(os.environ.get("SF_FIXED_ELO", "1800"))
     sf_path = os.environ.get("SF_PATH", "stockfish")
 

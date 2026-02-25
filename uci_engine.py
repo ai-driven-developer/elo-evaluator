@@ -180,8 +180,5 @@ class UCIEngine:
         mate_in = int(parts[idx + 1])
         if mate_in > 0:
             return MATE_SCORE
-        elif mate_in < 0:
-            return -MATE_SCORE
-        else:
-            # mate 0 means the side to move is checkmated
-            return -MATE_SCORE
+        # mate 0 or negative means the side to move is checkmated
+        return -MATE_SCORE

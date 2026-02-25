@@ -43,6 +43,8 @@ def get_stockfish_elo_range(stockfish_path: str = "stockfish") -> tuple[int, int
 
 @dataclass
 class EvaluationResult:
+    """Results of an engine evaluation run."""
+
     estimated_elo: float
     total_score: float
     total_games: int
@@ -343,14 +345,13 @@ def evaluate_engine(
 
     if strategy == "adaptive":
         return evaluate_engine_adaptive(**kwargs)
-    elif strategy == "linear":
+    if strategy == "linear":
         return evaluate_engine_linear(**kwargs)
-    elif strategy == "bsearch":
+    if strategy == "bsearch":
         return evaluate_engine_bsearch(**kwargs)
-    else:
-        raise ValueError(
-            f"Unknown strategy '{strategy}'. Use 'adaptive', 'linear', or 'bsearch'."
-        )
+    raise ValueError(
+        f"Unknown strategy '{strategy}'. Use 'adaptive', 'linear', or 'bsearch'."
+    )
 
 
 def print_results(result: EvaluationResult) -> None:
@@ -370,6 +371,7 @@ def print_results(result: EvaluationResult) -> None:
 
 
 def main(argv: list[str] | None = None) -> None:
+    """CLI entry point."""
     parser = argparse.ArgumentParser(
         description="Evaluate a chess engine's ELO rating via matches against Stockfish.",
     )
@@ -389,7 +391,10 @@ def main(argv: list[str] | None = None) -> None:
         "--max-elo", type=int, default=None,
         help="Max opponent ELO (default: auto-detect from Stockfish)",
     )
-    parser.add_argument("--stockfish", default="stockfish", help="Path to Stockfish (default: stockfish)")
+    parser.add_argument(
+        "--stockfish", default="stockfish",
+        help="Path to Stockfish (default: stockfish)",
+    )
     parser.add_argument(
         "--warmup", type=int, default=None,
         help="Number of warmup matches to exclude from rating (default: 2)",

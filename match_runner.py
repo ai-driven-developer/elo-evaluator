@@ -11,6 +11,8 @@ logger = logging.getLogger("match_runner")
 
 @dataclass
 class GameResult:
+    """Result of a single game between two engines."""
+
     game_number: int
     white: str  # "engine" or "stockfish"
     result: str  # "1-0", "0-1", "1/2-1/2"
@@ -21,6 +23,8 @@ class GameResult:
 
 @dataclass
 class MatchResult:
+    """Aggregated result of a multi-game match."""
+
     total_score: float
     num_games: int
     games: list[GameResult] = field(default_factory=list)
@@ -59,10 +63,8 @@ def play_game(
                 # Side to move is checkmated
                 if side == 0:
                     return "0-1", moves, "checkmate"
-                else:
-                    return "1-0", moves, "checkmate"
-            else:
-                return "1/2-1/2", moves, "stalemate"
+                return "1-0", moves, "checkmate"
+            return "1/2-1/2", moves, "stalemate"
 
         moves.append(bestmove)
         state.push_uci(bestmove)

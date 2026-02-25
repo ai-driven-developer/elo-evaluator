@@ -49,10 +49,12 @@ class ChessState:
         self._position_history[key] = self._position_history.get(key, 0) + 1
 
     def is_threefold_repetition(self) -> bool:
+        """Return True if the current position has occurred 3+ times."""
         key = self._position_key()
         return self._position_history.get(key, 0) >= 3
 
     def is_fifty_move_rule(self) -> bool:
+        """Return True if 50 moves passed without a capture or pawn move."""
         return self.halfmove_clock >= 100
 
     # --- Applying moves ---
