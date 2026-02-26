@@ -37,7 +37,7 @@ class ChessState:
     # --- Helpers ---
 
     @staticmethod
-    def _square_index(uci_sq: str) -> int:
+    def square_index(uci_sq: str) -> int:
         """'e2' -> 12"""
         return (int(uci_sq[1]) - 1) * 8 + (ord(uci_sq[0]) - ord("a"))
 
@@ -84,7 +84,7 @@ class ChessState:
                 return sq
         raise ValueError(f"No {'white' if white else 'black'} king on the board")
 
-    def is_square_attacked(self, sq: int, by_white: bool) -> bool:
+    def is_square_attacked(self, sq: int, by_white: bool) -> bool:  # pylint: disable=too-many-return-statements
         """Check if the given square is attacked by any piece of the given color."""
         r, f = sq // 8, sq % 8
 
@@ -128,7 +128,7 @@ class ChessState:
             while 0 <= nr < 8 and 0 <= nf < 8:
                 piece = self.board[nr * 8 + nf]
                 if piece != ".":
-                    if piece == rook or piece == queen:
+                    if piece in (rook, queen):
                         return True
                     break
                 nr += dr
@@ -141,7 +141,7 @@ class ChessState:
             while 0 <= nr < 8 and 0 <= nf < 8:
                 piece = self.board[nr * 8 + nf]
                 if piece != ".":
-                    if piece == bishop or piece == queen:
+                    if piece in (bishop, queen):
                         return True
                     break
                 nr += dr
@@ -172,7 +172,7 @@ class ChessState:
             sq += step
         return True
 
-    def _is_piece_move_pattern_valid(self, from_sq: int, to_sq: int) -> bool:
+    def is_piece_move_pattern_valid(self, from_sq: int, to_sq: int) -> bool:  # pylint: disable=too-many-return-statements
         """Check if the move follows the piece's movement pattern.
 
         Validates piece-specific movement, sliding piece obstruction,
@@ -221,7 +221,7 @@ class ChessState:
 
         return False
 
-    def _is_pawn_move_valid(self, from_sq: int, to_sq: int, piece: str,
+    def _is_pawn_move_valid(self, from_sq: int, to_sq: int, piece: str,  # pylint: disable=too-many-return-statements
                             dr: int, df: int, is_capture: bool) -> bool:
         """Validate pawn move specifics."""
         is_white = piece == "P"
@@ -254,7 +254,7 @@ class ChessState:
 
         return False
 
-    def _is_castling_valid(self, from_sq: int, to_sq: int) -> bool:
+    def _is_castling_valid(self, from_sq: int, to_sq: int) -> bool:  # pylint: disable=too-many-return-statements
         """Check castling legality: rights, path clear, not through check."""
         is_white = self.white_to_move
         expected_from = 4 if is_white else 60
@@ -307,7 +307,7 @@ class ChessState:
 
     # --- Full move legality ---
 
-    def _would_leave_king_in_check(self, from_sq: int, to_sq: int,
+    def would_leave_king_in_check(self, from_sq: int, to_sq: int,
                                     promotion: str | None = None) -> bool:
         """Simulate a move and check if it leaves own king in check."""
         # Save state
@@ -351,7 +351,7 @@ class ChessState:
 
     # --- Move validation ---
 
-    def validate_uci_move(self, move: str) -> bool:
+    def validate_uci_move(self, move: str) -> bool:  # pylint: disable=too-many-return-statements
         """Check that a UCI move is fully legal in the current position.
 
         Validates format, piece movement patterns, sliding piece obstruction,
@@ -366,8 +366,8 @@ class ChessState:
         if len(move) == 5 and move[4] not in "nbrq":
             return False
 
-        from_sq = self._square_index(move[:2])
-        to_sq = self._square_index(move[2:4])
+        from_sq = self.square_index(move[:2])
+        to_sq = self.square_index(move[2:4])
         promotion = move[4] if len(move) == 5 else None
 
         if from_sq == to_sq:
@@ -403,11 +403,11 @@ class ChessState:
             return False
 
         # Piece movement pattern
-        if not self._is_piece_move_pattern_valid(from_sq, to_sq):
+        if not self.is_piece_move_pattern_valid(from_sq, to_sq):
             return False
 
         # Must not leave own king in check
-        if self._would_leave_king_in_check(from_sq, to_sq, promotion):
+        if self.would_leave_king_in_check(from_sq, to_sq, promotion):
             return False
 
         return True
@@ -433,7 +433,7 @@ class ChessState:
                     if not self.white_to_move and target.islower():
                         continue
 
-                if not self._is_piece_move_pattern_valid(from_sq, to_sq):
+                if not self.is_piece_move_pattern_valid(from_sq, to_sq):
                     continue
 
                 is_pawn = piece in ("P", "p")
@@ -441,7 +441,7 @@ class ChessState:
                 promo_rank = 7 if self.white_to_move else 0
                 promo = "q" if is_pawn and to_rank == promo_rank else None
 
-                if not self._would_leave_king_in_check(from_sq, to_sq, promo):
+                if not self.would_leave_king_in_check(from_sq, to_sq, promo):
                     return True
 
         return False
@@ -466,7 +466,7 @@ class ChessState:
                     if not self.white_to_move and target.islower():
                         continue
 
-                if not self._is_piece_move_pattern_valid(from_sq, to_sq):
+                if not self.is_piece_move_pattern_valid(from_sq, to_sq):
                     continue
 
                 is_pawn = piece in ("P", "p")
@@ -475,12 +475,12 @@ class ChessState:
 
                 if is_pawn and to_rank == promo_rank:
                     for promo in "nbrq":
-                        if not self._would_leave_king_in_check(
+                        if not self.would_leave_king_in_check(
                             from_sq, to_sq, promo,
                         ):
                             moves.append(self._to_uci(from_sq, to_sq) + promo)
                 else:
-                    if not self._would_leave_king_in_check(from_sq, to_sq):
+                    if not self.would_leave_king_in_check(from_sq, to_sq):
                         moves.append(self._to_uci(from_sq, to_sq))
 
         return moves
@@ -556,8 +556,8 @@ class ChessState:
 
     def push_uci(self, move: str) -> None:
         """Apply a UCI move (e.g. 'e2e4', 'e7e8q') and update all state."""
-        from_sq = self._square_index(move[:2])
-        to_sq = self._square_index(move[2:4])
+        from_sq = self.square_index(move[:2])
+        to_sq = self.square_index(move[2:4])
         promotion = move[4] if len(move) == 5 else None
 
         piece = self.board[from_sq]

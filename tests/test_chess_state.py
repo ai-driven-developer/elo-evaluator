@@ -50,22 +50,22 @@ class TestInitialBoard(unittest.TestCase):
 class TestSquareIndex(unittest.TestCase):
 
     def test_a1(self):
-        self.assertEqual(ChessState._square_index("a1"), 0)
+        self.assertEqual(ChessState.square_index("a1"), 0)
 
     def test_h1(self):
-        self.assertEqual(ChessState._square_index("h1"), 7)
+        self.assertEqual(ChessState.square_index("h1"), 7)
 
     def test_a8(self):
-        self.assertEqual(ChessState._square_index("a8"), 56)
+        self.assertEqual(ChessState.square_index("a8"), 56)
 
     def test_h8(self):
-        self.assertEqual(ChessState._square_index("h8"), 63)
+        self.assertEqual(ChessState.square_index("h8"), 63)
 
     def test_e2(self):
-        self.assertEqual(ChessState._square_index("e2"), 12)
+        self.assertEqual(ChessState.square_index("e2"), 12)
 
     def test_e4(self):
-        self.assertEqual(ChessState._square_index("e4"), 28)
+        self.assertEqual(ChessState.square_index("e4"), 28)
 
 
 class TestPawnMoves(unittest.TestCase):

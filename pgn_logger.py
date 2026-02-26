@@ -18,8 +18,8 @@ def uci_to_san(state: ChessState, uci_move: str) -> str:
 
     The state is NOT modified — the caller must push the move separately.
     """
-    from_sq = state._square_index(uci_move[:2])
-    to_sq = state._square_index(uci_move[2:4])
+    from_sq = state.square_index(uci_move[:2])
+    to_sq = state.square_index(uci_move[2:4])
     promotion = uci_move[4] if len(uci_move) == 5 else None
 
     piece = state.board[from_sq]
@@ -72,9 +72,9 @@ def _disambiguate(state: ChessState, piece: str, from_sq: int, to_sq: int) -> st
                 continue
             if not state.white_to_move and target.islower():
                 continue
-        if not state._is_piece_move_pattern_valid(sq, to_sq):
+        if not state.is_piece_move_pattern_valid(sq, to_sq):
             continue
-        if state._would_leave_king_in_check(sq, to_sq):
+        if state.would_leave_king_in_check(sq, to_sq):
             continue
         ambiguous.append(sq)
 
@@ -192,7 +192,7 @@ def write_game_pgn(
     filename = f"{match_number}-{game.game_number}.pgn"
     filepath = os.path.join(log_dir, filename)
 
-    with open(filepath, "w") as f:
+    with open(filepath, "w", encoding="utf-8") as f:
         f.write(pgn)
 
     logger.debug("Wrote %s", filepath)

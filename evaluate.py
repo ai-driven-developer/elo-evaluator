@@ -119,12 +119,13 @@ def _run_single_match(
     """Run one match and accumulate results. Returns the match score."""
     logger.info("Starting match vs Stockfish ELO %d", elo)
 
-    on_game = None
     if log_dir:
         def on_game(game):
             write_game_pgn(
                 log_dir, match_number, game, elo, engine_name, log_date,
             )
+    else:
+        on_game = None
 
     result = run_match(
         engine_path=engine_path,

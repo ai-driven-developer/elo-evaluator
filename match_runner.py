@@ -32,7 +32,7 @@ class MatchResult:
     games: list[GameResult] = field(default_factory=list)
 
 
-def play_game(
+def play_game(  # pylint: disable=too-many-return-statements
     white: UCIEngine,
     black: UCIEngine,
     movetime_ms: int,
