@@ -1290,5 +1290,41 @@ class TestAutoDetectViaDispatcher(unittest.TestCase):
         mock_detect.assert_called_once_with("/my/stockfish")
 
 
+class TestUseOpeningsForwarding(unittest.TestCase):
+
+    @patch("evaluate.run_match")
+    def test_use_openings_forwarded_to_run_match(self, mock_run):
+        mock_run.return_value = make_match_result(2, 1.0)
+
+        evaluate_engine(
+            engine_path="/test/engine",
+            num_matches=1,
+            games_per_match=2,
+            movetime_ms=100,
+            min_elo=1000,
+            max_elo=2000,
+            use_openings=True,
+        )
+
+        mock_run.assert_called_once()
+        self.assertTrue(mock_run.call_args.kwargs["use_openings"])
+
+    @patch("evaluate.run_match")
+    def test_use_openings_default_false(self, mock_run):
+        mock_run.return_value = make_match_result(2, 1.0)
+
+        evaluate_engine(
+            engine_path="/test/engine",
+            num_matches=1,
+            games_per_match=2,
+            movetime_ms=100,
+            min_elo=1000,
+            max_elo=2000,
+        )
+
+        mock_run.assert_called_once()
+        self.assertFalse(mock_run.call_args.kwargs["use_openings"])
+
+
 if __name__ == "__main__":
     unittest.main()

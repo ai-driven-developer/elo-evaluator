@@ -107,6 +107,7 @@ def _run_single_match(
     movetime_ms: int,
     stockfish_path: str,
     match_results: list[tuple[int, MatchResult]],
+    use_openings: bool = False,
 ) -> float:
     """Run one match and accumulate results. Returns the match score."""
     logger.info("Starting match vs Stockfish ELO %d", elo)
@@ -117,6 +118,7 @@ def _run_single_match(
         num_games=games_per_match,
         movetime_ms=movetime_ms,
         stockfish_path=stockfish_path,
+        use_openings=use_openings,
     )
 
     match_results.append((elo, result))
@@ -177,6 +179,7 @@ def evaluate_engine_linear(
     max_elo: int = 2800,
     stockfish_path: str = "stockfish",
     warmup: int | None = None,
+    use_openings: bool = False,
 ) -> EvaluationResult:
     """Linear strategy: play matches at evenly spaced ELO levels."""
     warmup = _resolve_warmup(warmup, num_matches)
@@ -188,7 +191,7 @@ def evaluate_engine_linear(
     for elo in elo_levels:
         total_score += _run_single_match(
             engine_path, elo, games_per_match, movetime_ms,
-            stockfish_path, match_results,
+            stockfish_path, match_results, use_openings,
         )
 
     return _build_result(total_score, match_results, warmup)
@@ -203,6 +206,7 @@ def evaluate_engine_adaptive(
     max_elo: int = 2800,
     stockfish_path: str = "stockfish",
     warmup: int | None = None,
+    use_openings: bool = False,
 ) -> EvaluationResult:
     """Adaptive strategy: pick next opponent ELO based on current performance.
 
@@ -227,7 +231,7 @@ def evaluate_engine_adaptive(
     for match_num in range(num_matches):
         total_score += _run_single_match(
             engine_path, next_elo, games_per_match, movetime_ms,
-            stockfish_path, match_results,
+            stockfish_path, match_results, use_openings,
         )
 
         if match_num < num_matches - 1:
@@ -259,6 +263,7 @@ def evaluate_engine_bsearch(
     max_elo: int = 2800,
     stockfish_path: str = "stockfish",
     warmup: int | None = None,
+    use_openings: bool = False,
 ) -> EvaluationResult:
     """Binary search strategy: narrow the ELO range by halving each step.
 
@@ -279,7 +284,7 @@ def evaluate_engine_bsearch(
         mid = round((lo + hi) / 2)
         total_score += _run_single_match(
             engine_path, mid, games_per_match, movetime_ms,
-            stockfish_path, match_results,
+            stockfish_path, match_results, use_openings,
         )
 
         if match_num < num_matches - 1:
@@ -399,6 +404,10 @@ def main(argv: list[str] | None = None) -> None:
         "--warmup", type=int, default=None,
         help="Number of warmup matches to exclude from rating (default: 2)",
     )
+    parser.add_argument(
+        "--openings", action="store_true", default=False,
+        help="Start each game from a random opening position",
+    )
     args = parser.parse_args(argv)
 
     logging.basicConfig(
@@ -417,6 +426,7 @@ def main(argv: list[str] | None = None) -> None:
         max_elo=args.max_elo,
         stockfish_path=args.stockfish,
         warmup=args.warmup,
+        use_openings=args.openings,
     )
 
     print_results(result)

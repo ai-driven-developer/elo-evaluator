@@ -4,6 +4,7 @@ import logging
 from dataclasses import dataclass, field
 
 from chess_state import ChessState
+from openings import get_random_opening
 from uci_engine import UCIEngine, MATE_SCORE
 
 logger = logging.getLogger("match_runner")
@@ -34,11 +35,18 @@ def play_game(
     white: UCIEngine,
     black: UCIEngine,
     movetime_ms: int,
+    opening_moves: list[str] | None = None,
 ) -> tuple[str, list[str], str]:
     """Play a single game between two engines.
 
     The game ends on checkmate, stalemate, threefold repetition,
     or the 50-move rule.
+
+    Args:
+        white: Engine playing white.
+        black: Engine playing black.
+        movetime_ms: Time per move in milliseconds.
+        opening_moves: Optional list of UCI moves to pre-play as an opening.
 
     Returns:
         (result, moves, termination) where result is "1-0", "0-1", or "1/2-1/2".
@@ -49,6 +57,11 @@ def play_game(
     state = ChessState()
     moves: list[str] = []
     engines = [white, black]
+
+    if opening_moves:
+        for move in opening_moves:
+            moves.append(move)
+            state.push_uci(move)
 
     while True:
         side = len(moves) % 2  # 0=white, 1=black
@@ -83,6 +96,7 @@ def run_match(
     num_games: int,
     movetime_ms: int,
     stockfish_path: str = "stockfish",
+    use_openings: bool = False,
 ) -> MatchResult:
     """Run a match of num_games between engine and Stockfish.
 
@@ -95,6 +109,7 @@ def run_match(
         num_games: Number of games to play.
         movetime_ms: Time per move in milliseconds.
         stockfish_path: Path to stockfish binary (default: "stockfish").
+        use_openings: Start each game from a random opening position.
 
     Returns:
         MatchResult with total score and individual game results.
@@ -115,8 +130,9 @@ def run_match(
                 white, black = stockfish, engine
                 white_label = "stockfish"
 
+            opening = get_random_opening() if use_openings else None
             game_result_str, moves, termination = play_game(
-                white, black, movetime_ms
+                white, black, movetime_ms, opening_moves=opening,
             )
 
             engine_score = _compute_engine_score(

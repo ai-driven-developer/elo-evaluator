@@ -101,6 +101,7 @@ python evaluate.py ./my_engine --matches 10 --games 6 --movetime 50 --strategy b
 | `--max-elo N` | Maximum opponent ELO (default: auto-detect from Stockfish) |
 | `--stockfish PATH` | Path to Stockfish binary (default: `stockfish`) |
 | `--warmup N` | Warmup matches excluded from rating (default: 2) |
+| `--openings` | Start each game from a random opening position |
 
 ## Warmup Matches
 
@@ -124,6 +125,20 @@ For example, with `--warmup 2`:
 
 Warmup matches are still played and always affect strategy decisions (e.g.,
 adaptive ELO selection early on).
+
+## Opening Book Randomization
+
+By default all games start from the standard position. With `--openings`, each
+game begins from a randomly chosen opening line (1–3 moves per side from known
+openings like the Sicilian, French, Caro-Kann, Queen's Gambit, King's Indian,
+Italian, etc.). This increases game diversity and reduces the influence of a
+single opening on the result.
+
+```bash
+python evaluate.py ./my_engine --matches 10 --games 6 --movetime 50 --openings
+```
+
+The opening book is defined in `openings.py` and currently contains 16 lines.
 
 ## ELO Range Auto-Detection
 
@@ -152,6 +167,7 @@ match_runner.py      Runs matches between two UCI engines
 uci_engine.py        UCI protocol wrapper (subprocess-based)
 chess_state.py       Lightweight board tracker for draw detection
 performance_elo.py   Performance rating calculation (FIDE-like)
+openings.py          Opening book for game randomization
 sf_wrapper.py        Stockfish wrapper for fixed-ELO play
 tests/               Unit tests for all modules
 ```

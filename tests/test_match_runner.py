@@ -183,6 +183,59 @@ class TestPlayGame(unittest.TestCase):
         black.go.assert_any_call(["e2e4", "e7e5", "d2d4"], 100)
 
 
+# --- play_game opening_moves tests ---
+
+
+class TestPlayGameOpenings(unittest.TestCase):
+
+    def test_opening_moves_prepended(self):
+        """When opening_moves are given, engines see them in the move list."""
+        white = make_mock_engine([("d2d4", 5)])
+        black = make_mock_engine([("(none)", -MATE_SCORE)])
+
+        play_game(white, black, movetime_ms=100, opening_moves=["e2e4", "e7e5"])
+
+        # White's first go() should see the opening moves
+        white.go.assert_any_call(["e2e4", "e7e5"], 100)
+        # Black sees opening + white's move
+        black.go.assert_any_call(["e2e4", "e7e5", "d2d4"], 100)
+
+    def test_opening_moves_in_result(self):
+        """Returned moves list includes opening moves."""
+        white = make_mock_engine([("(none)", -MATE_SCORE)])
+        black = make_mock_engine([])
+
+        _, moves, _ = play_game(
+            white, black, movetime_ms=100, opening_moves=["e2e4", "e7e5"],
+        )
+
+        self.assertEqual(moves[:2], ["e2e4", "e7e5"])
+
+    def test_no_opening_moves_default(self):
+        """Without opening_moves, first engine call gets empty list."""
+        white = make_mock_engine([("(none)", -MATE_SCORE)])
+        black = make_mock_engine([])
+
+        play_game(white, black, movetime_ms=100)
+
+        white.go.assert_called_with([], 100)
+
+    def test_opening_side_to_move_correct(self):
+        """After odd-length opening, black moves first."""
+        # 3-move opening: e2e4 e7e5 g1f3 → black to move
+        white = make_mock_engine([])
+        black = make_mock_engine([("(none)", -MATE_SCORE)])
+
+        play_game(
+            white, black, movetime_ms=100,
+            opening_moves=["e2e4", "e7e5", "g1f3"],
+        )
+
+        # Black should be called (side=1 because len(moves)=3 is odd)
+        black.go.assert_called_once()
+        white.go.assert_not_called()
+
+
 # --- _compute_engine_score tests ---
 
 
@@ -395,6 +448,52 @@ class TestRunMatch(unittest.TestCase):
         self.assertEqual(game.engine_score, 1.0)
         self.assertEqual(game.moves, ["e2e4", "e7e5", "d1h5"])
         self.assertEqual(game.termination, "checkmate")
+
+
+class TestRunMatchOpenings(unittest.TestCase):
+
+    @patch("match_runner.get_random_opening", return_value=["e2e4", "e7e5"])
+    @patch("match_runner.play_game")
+    @patch("match_runner.UCIEngine")
+    def test_use_openings_passes_opening_moves(
+        self, mock_cls, mock_play, mock_opening,
+    ):
+        engine_inst = make_mock_engine([])
+        sf_inst = make_mock_engine([])
+        mock_cls.side_effect = [engine_inst, sf_inst]
+        mock_play.return_value = ("1/2-1/2", [], "stalemate")
+
+        run_match(
+            engine_path="/test/engine",
+            stockfish_elo=1500,
+            num_games=1,
+            movetime_ms=100,
+            use_openings=True,
+        )
+
+        mock_opening.assert_called_once()
+        _, kwargs = mock_play.call_args
+        self.assertEqual(kwargs["opening_moves"], ["e2e4", "e7e5"])
+
+    @patch("match_runner.get_random_opening")
+    @patch("match_runner.play_game")
+    @patch("match_runner.UCIEngine")
+    def test_no_openings_by_default(self, mock_cls, mock_play, mock_opening):
+        engine_inst = make_mock_engine([])
+        sf_inst = make_mock_engine([])
+        mock_cls.side_effect = [engine_inst, sf_inst]
+        mock_play.return_value = ("1/2-1/2", [], "stalemate")
+
+        run_match(
+            engine_path="/test/engine",
+            stockfish_elo=1500,
+            num_games=1,
+            movetime_ms=100,
+        )
+
+        mock_opening.assert_not_called()
+        _, kwargs = mock_play.call_args
+        self.assertIsNone(kwargs["opening_moves"])
 
 
 class TestRunMatchLogging(unittest.TestCase):
