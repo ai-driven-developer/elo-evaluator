@@ -11,6 +11,7 @@ def make_mock_engine(go_responses: list[tuple[str, int | None]]):
     Each element is (bestmove, score_cp).
     """
     engine = MagicMock()
+    engine.path = "/mock/engine"
     engine.go = MagicMock(side_effect=go_responses)
     engine.new_game = MagicMock()
     engine.start = MagicMock()
@@ -157,6 +158,53 @@ class TestPlayGame(unittest.TestCase):
         result, _, term = play_game(white, black, movetime_ms=100)
         self.assertEqual(result, "1/2-1/2")
         self.assertEqual(term, "stalemate")
+
+    def test_illegal_move_forfeits_white(self):
+        """White sends an invalid move (a1a1) — white forfeits, black wins."""
+        white = make_mock_engine([("a1a1", 0)])
+        black = make_mock_engine([])
+        result, moves, term = play_game(white, black, movetime_ms=100)
+        self.assertEqual(result, "0-1")
+        self.assertEqual(term, "illegal_move")
+
+    def test_illegal_move_forfeits_black(self):
+        """Black sends an invalid move — black forfeits, white wins."""
+        white = make_mock_engine([("e2e4", 10)])
+        black = make_mock_engine([("x9z1", 0)])
+        result, moves, term = play_game(white, black, movetime_ms=100)
+        self.assertEqual(result, "1-0")
+        self.assertEqual(term, "illegal_move")
+
+    def test_illegal_move_with_mate_score_is_checkmate(self):
+        """Engine sends garbage but reports being mated — treat as checkmate."""
+        white = make_mock_engine([
+            ("f2f3", -10),
+            ("g2g4", -200),
+            ("a1a1", -MATE_SCORE),  # should be (none) but sent garbage
+        ])
+        black = make_mock_engine([
+            ("e7e5", 50),
+            ("d8h4", MATE_SCORE),
+        ])
+        result, moves, term = play_game(white, black, movetime_ms=100)
+        self.assertEqual(result, "0-1")
+        self.assertEqual(term, "checkmate")
+
+    def test_illegal_move_empty_square(self):
+        """Moving from an empty square is rejected."""
+        white = make_mock_engine([("e4e5", 10)])  # e4 is empty at start
+        black = make_mock_engine([])
+        result, moves, term = play_game(white, black, movetime_ms=100)
+        self.assertEqual(result, "0-1")
+        self.assertEqual(term, "illegal_move")
+
+    def test_illegal_move_wrong_color(self):
+        """White tries to move a black piece — illegal."""
+        white = make_mock_engine([("e7e5", 10)])  # black pawn
+        black = make_mock_engine([])
+        result, moves, term = play_game(white, black, movetime_ms=100)
+        self.assertEqual(result, "0-1")
+        self.assertEqual(term, "illegal_move")
 
     def test_new_game_called_for_both_engines(self):
         """new_game() is called on both engines before playing."""

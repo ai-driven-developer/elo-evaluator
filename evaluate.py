@@ -2,11 +2,14 @@
 
 import argparse
 import logging
+import os
 import sys
 from dataclasses import dataclass
+from datetime import datetime, timezone
 
 from match_runner import run_match, MatchResult
 from performance_elo import performance_rating
+from pgn_logger import create_log_dir, write_game_pgn
 from uci_engine import UCIEngine
 
 logger = logging.getLogger("evaluate")
@@ -108,9 +111,20 @@ def _run_single_match(
     stockfish_path: str,
     match_results: list[tuple[int, MatchResult]],
     use_openings: bool = False,
+    log_dir: str | None = None,
+    match_number: int = 0,
+    engine_name: str = "",
+    log_date: str = "",
 ) -> float:
     """Run one match and accumulate results. Returns the match score."""
     logger.info("Starting match vs Stockfish ELO %d", elo)
+
+    on_game = None
+    if log_dir:
+        def on_game(game):
+            write_game_pgn(
+                log_dir, match_number, game, elo, engine_name, log_date,
+            )
 
     result = run_match(
         engine_path=engine_path,
@@ -119,6 +133,7 @@ def _run_single_match(
         movetime_ms=movetime_ms,
         stockfish_path=stockfish_path,
         use_openings=use_openings,
+        on_game_complete=on_game,
     )
 
     match_results.append((elo, result))
@@ -180,6 +195,9 @@ def evaluate_engine_linear(
     stockfish_path: str = "stockfish",
     warmup: int | None = None,
     use_openings: bool = False,
+    log_dir: str | None = None,
+    engine_name: str = "",
+    log_date: str = "",
 ) -> EvaluationResult:
     """Linear strategy: play matches at evenly spaced ELO levels."""
     warmup = _resolve_warmup(warmup, num_matches)
@@ -188,10 +206,11 @@ def evaluate_engine_linear(
     total_score = 0.0
     match_results: list[tuple[int, MatchResult]] = []
 
-    for elo in elo_levels:
+    for i, elo in enumerate(elo_levels):
         total_score += _run_single_match(
             engine_path, elo, games_per_match, movetime_ms,
             stockfish_path, match_results, use_openings,
+            log_dir, i + 1, engine_name, log_date,
         )
 
     return _build_result(total_score, match_results, warmup)
@@ -207,6 +226,9 @@ def evaluate_engine_adaptive(
     stockfish_path: str = "stockfish",
     warmup: int | None = None,
     use_openings: bool = False,
+    log_dir: str | None = None,
+    engine_name: str = "",
+    log_date: str = "",
 ) -> EvaluationResult:
     """Adaptive strategy: pick next opponent ELO based on current performance.
 
@@ -232,6 +254,7 @@ def evaluate_engine_adaptive(
         total_score += _run_single_match(
             engine_path, next_elo, games_per_match, movetime_ms,
             stockfish_path, match_results, use_openings,
+            log_dir, match_num + 1, engine_name, log_date,
         )
 
         if match_num < num_matches - 1:
@@ -264,6 +287,9 @@ def evaluate_engine_bsearch(
     stockfish_path: str = "stockfish",
     warmup: int | None = None,
     use_openings: bool = False,
+    log_dir: str | None = None,
+    engine_name: str = "",
+    log_date: str = "",
 ) -> EvaluationResult:
     """Binary search strategy: narrow the ELO range by halving each step.
 
@@ -285,6 +311,7 @@ def evaluate_engine_bsearch(
         total_score += _run_single_match(
             engine_path, mid, games_per_match, movetime_ms,
             stockfish_path, match_results, use_openings,
+            log_dir, match_num + 1, engine_name, log_date,
         )
 
         if match_num < num_matches - 1:
@@ -347,6 +374,15 @@ def evaluate_engine(
     )
     kwargs["min_elo"] = min_elo
     kwargs["max_elo"] = max_elo
+
+    # Set up PGN logging
+    engine_path = kwargs["engine_path"]
+    log_dir = create_log_dir(engine_path)
+    engine_name = os.path.splitext(os.path.basename(engine_path))[0]
+    log_date = datetime.now(timezone.utc).strftime("%Y.%m.%d")
+    kwargs["log_dir"] = log_dir
+    kwargs["engine_name"] = engine_name
+    kwargs["log_date"] = log_date
 
     if strategy == "adaptive":
         return evaluate_engine_adaptive(**kwargs)

@@ -1,6 +1,7 @@
 """Run a match between a test engine and Stockfish via UCI."""
 
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass, field
 
 from chess_state import ChessState
@@ -70,18 +71,43 @@ def play_game(
         bestmove, score = engine.go(list(moves), movetime_ms)
 
         if bestmove in ("(none)", "0000"):
-            # No legal moves: checkmate or stalemate
-            # Note: "(none)" is Stockfish's convention, "0000" is used by many other engines
+            # Engine claims no legal moves — use independent check detection,
+            # falling back to engine score when board detection is ambiguous.
+            if state.is_in_check():
+                if side == 0:
+                    return "0-1", moves, "checkmate"
+                return "1-0", moves, "checkmate"
             if score is not None and score <= -MATE_SCORE // 2:
-                # Side to move is checkmated
                 if side == 0:
                     return "0-1", moves, "checkmate"
                 return "1-0", moves, "checkmate"
             return "1/2-1/2", moves, "stalemate"
 
+        if not state.validate_uci_move(bestmove):
+            logger.warning("illegal move from %s: %s", engine.path, bestmove)
+            # Independently check if the position is checkmate or stalemate.
+            if not state.has_legal_moves():
+                if state.is_in_check():
+                    if side == 0:
+                        return "0-1", moves, "checkmate"
+                    return "1-0", moves, "checkmate"
+                return "1/2-1/2", moves, "stalemate"
+            # Position has legal moves but engine sent an illegal one — forfeit.
+            if side == 0:
+                return "0-1", moves, "illegal_move"
+            return "1-0", moves, "illegal_move"
+
         moves.append(bestmove)
         state.push_uci(bestmove)
         logger.debug("ply %d: %s", len(moves), bestmove)
+
+        # Independent checkmate / stalemate detection after each move.
+        if not state.has_legal_moves():
+            if state.is_in_check():
+                if side == 0:
+                    return "1-0", moves, "checkmate"
+                return "0-1", moves, "checkmate"
+            return "1/2-1/2", moves, "stalemate"
 
         if state.is_threefold_repetition():
             return "1/2-1/2", moves, "threefold_repetition"
@@ -97,6 +123,7 @@ def run_match(
     movetime_ms: int,
     stockfish_path: str = "stockfish",
     use_openings: bool = False,
+    on_game_complete: Callable[[GameResult], None] | None = None,
 ) -> MatchResult:
     """Run a match of num_games between engine and Stockfish.
 
@@ -159,6 +186,9 @@ def run_match(
                 engine_score,
                 len(moves),
             )
+
+            if on_game_complete is not None:
+                on_game_complete(game)
 
     return result
 
