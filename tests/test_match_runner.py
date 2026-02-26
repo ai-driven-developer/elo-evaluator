@@ -163,7 +163,7 @@ class TestPlayGame(unittest.TestCase):
         """White sends an invalid move (a1a1) — white forfeits, black wins."""
         white = make_mock_engine([("a1a1", 0)])
         black = make_mock_engine([])
-        result, moves, term = play_game(white, black, movetime_ms=100)
+        result, _, term = play_game(white, black, movetime_ms=100)
         self.assertEqual(result, "0-1")
         self.assertEqual(term, "illegal_move")
 
@@ -171,7 +171,7 @@ class TestPlayGame(unittest.TestCase):
         """Black sends an invalid move — black forfeits, white wins."""
         white = make_mock_engine([("e2e4", 10)])
         black = make_mock_engine([("x9z1", 0)])
-        result, moves, term = play_game(white, black, movetime_ms=100)
+        result, _, term = play_game(white, black, movetime_ms=100)
         self.assertEqual(result, "1-0")
         self.assertEqual(term, "illegal_move")
 
@@ -186,7 +186,7 @@ class TestPlayGame(unittest.TestCase):
             ("e7e5", 50),
             ("d8h4", MATE_SCORE),
         ])
-        result, moves, term = play_game(white, black, movetime_ms=100)
+        result, _, term = play_game(white, black, movetime_ms=100)
         self.assertEqual(result, "0-1")
         self.assertEqual(term, "checkmate")
 
@@ -194,7 +194,7 @@ class TestPlayGame(unittest.TestCase):
         """Moving from an empty square is rejected."""
         white = make_mock_engine([("e4e5", 10)])  # e4 is empty at start
         black = make_mock_engine([])
-        result, moves, term = play_game(white, black, movetime_ms=100)
+        result, _, term = play_game(white, black, movetime_ms=100)
         self.assertEqual(result, "0-1")
         self.assertEqual(term, "illegal_move")
 
@@ -202,7 +202,7 @@ class TestPlayGame(unittest.TestCase):
         """White tries to move a black piece — illegal."""
         white = make_mock_engine([("e7e5", 10)])  # black pawn
         black = make_mock_engine([])
-        result, moves, term = play_game(white, black, movetime_ms=100)
+        result, _, term = play_game(white, black, movetime_ms=100)
         self.assertEqual(result, "0-1")
         self.assertEqual(term, "illegal_move")
 

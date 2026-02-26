@@ -1,6 +1,8 @@
 import unittest
+from unittest.mock import MagicMock
 
 from chess_state import ChessState
+from match_runner import play_game
 
 
 class TestInitialBoard(unittest.TestCase):
@@ -998,9 +1000,6 @@ class TestPostMoveCheckmateDetection(unittest.TestCase):
 
     def test_fools_mate_detected_after_qh4(self):
         """Game ends immediately after Qh4# without asking white for a move."""
-        from match_runner import play_game
-        from unittest.mock import MagicMock
-
         def make_eng(responses):
             e = MagicMock()
             e.path = "/mock"
@@ -1019,9 +1018,6 @@ class TestPostMoveCheckmateDetection(unittest.TestCase):
         self.assertEqual(white.go.call_count, 2)
 
     def test_scholars_mate_detected_after_qxf7(self):
-        from match_runner import play_game
-        from unittest.mock import MagicMock
-
         def make_eng(responses):
             e = MagicMock()
             e.path = "/mock"

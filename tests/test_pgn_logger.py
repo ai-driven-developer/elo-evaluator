@@ -186,14 +186,14 @@ class TestMovesToSan(unittest.TestCase):
 class TestGameToPgn(unittest.TestCase):
 
     def _make_game(self, **overrides):
-        defaults = dict(
-            game_number=1,
-            white="engine",
-            result="1-0",
-            engine_score=1.0,
-            moves=["e2e4", "e7e5", "d1h5", "b8c6", "f1c4", "g8f6", "h5f7"],
-            termination="checkmate",
-        )
+        defaults = {
+            "game_number": 1,
+            "white": "engine",
+            "result": "1-0",
+            "engine_score": 1.0,
+            "moves": ["e2e4", "e7e5", "d1h5", "b8c6", "f1c4", "g8f6", "h5f7"],
+            "termination": "checkmate",
+        }
         defaults.update(overrides)
         return GameResult(**defaults)
 
@@ -251,7 +251,8 @@ class TestCreateLogDir(unittest.TestCase):
         tmpdir = tempfile.mkdtemp()
         try:
             fake_engine = os.path.join(tmpdir, "myengine.sh")
-            open(fake_engine, "w").close()
+            with open(fake_engine, "w", encoding="utf-8"):
+                pass
             log_dir = create_log_dir(fake_engine)
             self.assertTrue(os.path.isdir(log_dir))
             # Dir name starts with engine basename
@@ -268,7 +269,8 @@ class TestCreateLogDir(unittest.TestCase):
         tmpdir = tempfile.mkdtemp()
         try:
             fake_engine = os.path.join(tmpdir, "engine.sh")
-            open(fake_engine, "w").close()
+            with open(fake_engine, "w", encoding="utf-8"):
+                pass
             log_dir = create_log_dir(fake_engine)
             basename = os.path.basename(log_dir)
             self.assertTrue(basename.startswith("engine_"))
@@ -296,7 +298,7 @@ class TestWriteGamePgn(unittest.TestCase):
             write_game_pgn(tmpdir, 3, game, 1500, "eng", "2026.02.26")
             filepath = os.path.join(tmpdir, "3-2.pgn")
             self.assertTrue(os.path.isfile(filepath))
-            with open(filepath) as f:
+            with open(filepath, encoding="utf-8") as f:
                 content = f.read()
             self.assertIn('[Round "3.2"]', content)
             self.assertIn("1. e4 e5", content)
